@@ -74,7 +74,7 @@ def build_dataset(output_path: str, cn_name: str, en_name: str):
                     # 这里需要处理过长文本的问题，按4096截断，中间允许128的overlap
 
                     content = "\n".join(lines)
-                    split_lines = split_text(content, 4096, 100)
+                    split_lines = split_text(content, 2048, 0)
 
                     for lines_idx, lines in enumerate(split_lines):
                         content = json.dumps({
