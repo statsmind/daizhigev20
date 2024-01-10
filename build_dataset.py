@@ -7,7 +7,7 @@ from typing import List
 import numpy as np
 
 
-def split_lines(lines: List[str], max_len: int, overlap: int):
+def split_lines(lines: List[str], max_len: int):
     """Split a list of lines into multiple shorter lines.
 
     Args:
@@ -28,7 +28,7 @@ def split_lines(lines: List[str], max_len: int, overlap: int):
         if buf_len + len(line) > max_len:
              yield buf
 
-             buf = buf[-2:]
+             buf = buf[-1:]
              buf.append(line)
              buf_len = np.sum([len(txt) for txt in buf])
         else:
@@ -39,7 +39,7 @@ def split_lines(lines: List[str], max_len: int, overlap: int):
         yield buf
 
 
-def split_text(text: str, window: int):
+def split_text(text: str, window: int, overlap: int):
     lines = []
 
     offset = 0
@@ -47,12 +47,12 @@ def split_text(text: str, window: int):
         lines.append(text[offset: offset + window])
         if offset + window >= len(text):
             break
-        offset += window
-
-    if len(lines) > 1 and len(lines[-1]) <= window / 4:
-        last_line = lines[-1]
-        lines = lines[:-1]
-        lines[-1] += last_line
+        offset += window - overlap
+    #
+    # if len(lines) > 1 and len(lines[-1]) <= window / 4:
+    #     last_line = lines[-1]
+    #     lines = lines[:-1]
+    #     lines[-1] += last_line
 
     return lines
 
@@ -70,15 +70,18 @@ def build_dataset(output_path: str, cn_name: str, en_name: str):
 
                 with open(os.path.join(dirpath, filename), 'r', encoding="utf-8") as f:
                     lines = [line.strip() for line in f.readlines()]
-                    lines = [line + "\n" for line in lines if len(line) > 0]
+                    lines = [line for line in lines if len(line) > 0]
                     # 这里需要处理过长文本的问题，按4096截断，中间允许128的overlap
+
+                    content = "\n".join(lines)
+                    split_lines = split_text(content, 4096, 100)
 
                     cut_lines = []
                     for line in lines:
                         for split_line in split_text(line, 1000):
                             cut_lines.append(split_line)
 
-                    for lines_idx, lines in enumerate(split_lines(cut_lines, 4096, 128)):
+                    for lines_idx, lines in enumerate(split_lines(cut_lines, 4096)):
                         content = json.dumps({
                             'category': cn_name,
                             'filename': filename,
