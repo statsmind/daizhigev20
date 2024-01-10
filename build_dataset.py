@@ -76,17 +76,12 @@ def build_dataset(output_path: str, cn_name: str, en_name: str):
                     content = "\n".join(lines)
                     split_lines = split_text(content, 4096, 100)
 
-                    cut_lines = []
-                    for line in lines:
-                        for split_line in split_text(line, 1000):
-                            cut_lines.append(split_line)
-
-                    for lines_idx, lines in enumerate(split_lines(cut_lines, 4096)):
+                    for lines_idx, lines in enumerate(split_lines):
                         content = json.dumps({
                             'category': cn_name,
                             'filename': filename,
                             'segment_id': lines_idx,
-                            'text': "".join(lines)
+                            'text': lines
                         }, ensure_ascii=False)
 
                         fp.write(content + "\n")
