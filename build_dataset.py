@@ -39,6 +39,15 @@ def split_lines(lines: List[str], max_len: int):
         yield buf
 
 
+def filter_text(text) -> str:
+    text = text.replace('\r', '').replace('　', ' ').strip()
+
+    if text.startswith('钦定') or text.startswith('【臣】等') or text.startswith('总纂官') or text.startswith('总校官') or text == '提要':
+        return ''
+    else:
+        return text
+
+
 def split_text(text: str, window: int, overlap: int):
     lines = []
 
@@ -63,13 +72,18 @@ def build_dataset(output_path: str, cn_name: str, en_name: str):
     with open(output_file, "w", encoding="utf-8") as fp:
         for dirpath, dirnames, filenames in os.walk(os.path.join(root_path, cn_name)):
             for filename in filenames:
-                if not filename.endswith(".txt"):
+                if not filename.endswith(".txt") or filename.endswith("_pp.txt"):
                     continue
 
-                print("processing", os.path.join(dirpath, filename))
+                filepath = os.path.join(dirpath, filename)
+                pp_filepath = filepath.replace(".txt", "_pp.txt")
+                if os.path.exists(pp_filepath):
+                    filepath = pp_filepath
 
-                with open(os.path.join(dirpath, filename), 'r', encoding="utf-8") as f:
-                    lines = [line.strip() for line in f.readlines()]
+                print("processing", filepath)
+
+                with open(filepath, 'r', encoding="utf-8") as f:
+                    lines = [filter_text(line) for line in f.readlines()]
                     lines = [line for line in lines if len(line) > 0]
                     # 这里需要处理过长文本的问题，按4096截断，中间允许128的overlap
 
